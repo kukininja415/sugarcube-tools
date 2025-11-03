@@ -1,0 +1,68 @@
+#sc-variable-editor {
+position: fixed; top: 20px; left: 20px; z-index: 99999;
+background-color: #2d3748; color: #e2e8f0; border: 1px solid #4a5568;
+border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+font-size: 14px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none;
+width: 380px; max-width: 90vw;
+}
+#sc-editor-header {
+padding: 8px 12px; cursor: move; background-color: #1a202c;
+border-bottom: 1px solid #4a5568; border-top-left-radius: 8px; border-top-right-radius: 8px;
+display: flex; justify-content: space-between; align-items: center;
+}
+#sc-editor-header span { font-weight: bold; }
+#sc-editor-controls button {
+cursor: pointer; margin-left: 10px; font-weight: bold; border: none; background: #4a5568;
+color: #e2e8f0; border-radius: 4px; padding: 2px 6px;
+}
+#sc-editor-tabs { display: flex; border-bottom: 1px solid #4a5568; }
+.sc-tab-button {
+flex: 1; padding: 8px; background: none; border: none; color: #a0aec0;
+cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent;
+white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-tab-button.active { color: #e2e8f0; border-bottom-color: #63b3ed; font-weight: 600; }
+#sc-editor-body { padding: 12px; max-height: 400px; overflow-y: auto; }
+.sc-tab-panel { display: none; }
+.sc-tab-panel.active { display: block; }
+.sc-variable-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
+.sc-variable-label { flex: 0 0 130px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-variable-input {
+flex-grow: 1; min-width: 0; padding: 4px 8px; background-color: #1a202c;
+border: 1px solid #4a5568; color: #e2e8f0; border-radius: 4px;
+}
+.sc-variable-input:focus { outline: none; border-color: #63b3ed; }
+#sc-passage-panel pre { background-color: #1a202c; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; color: #cbd5e0; }
+#sc-passage-panel code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 13px; }
+#sc-editor-floating-toggle {
+position: fixed; bottom: 20px; right: 20px; z-index: 99998; width: 50px; height: 50px;
+border-radius: 50%; background-color: #2d3748; color: #e2e8f0; border: 2px solid #4a5568;
+font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+box-shadow: 0 4px 8px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;
+}
+.sc-utils-button, .sc-history-button {
+display: inline-block; padding: 8px 12px; background-color: #4a5568;
+color: #e2e8f0; text-decoration: none; border-radius: 4px;
+border: 1px solid #2d3748; font-weight: 500; cursor: pointer;
+box-sizing: border-box; text-align: center;
+}
+.sc-history-controls { display: flex; justify-content: space-between; gap: 8px; }
+.sc-history-button { flex-grow: 1; }
+.sc-utils-container { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+/* Explorer Styles */
+#sc-explorer-path { padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #4a5568; font-size: 12px; color: #a0aec0; word-wrap: break-word; }
+.sc-explorer-crumb { cursor: pointer; text-decoration: underline; }
+.sc-explorer-crumb:hover { color: #63b3ed; }
+.sc-explorer-value-preview { font-style: italic; color: #a0aec0; }
+.sc-explorer-button { background: #4a5568; border: none; color: #e2e8f0; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+
+/* Docked Mode Styles */
+#sc-variable-editor.sc-editor-docked {
+top: auto !important; left: auto !important; bottom: 0; right: 0;
+width: 100%; max-width: 550px;
+border-radius: 8px 8px 0 0;
+box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+border-bottom: none;
+}
+#sc-variable-editor.sc-editor-docked #sc-editor-header { cursor: default; }
