@@ -2,7 +2,7 @@
 const MENU_TITLE = "SC Editor";
 
 // --- State Management ---
-let explorerPath = []; // Holds the navigation path for the object explorer
+let explorerPath = ['settings']; // Holds the navigation path for the object explorer
 
 function getSugarCube() {
     try {
@@ -41,6 +41,16 @@ function isSugarCubeReady() {
 function initializeEditor(styles) {
     console.log("SugarCube Advanced Editor: SugarCube detected. Initializing editor.");
 
+    // --- Disable Save Title Prompt ---
+    const sc = getSugarCube();
+    if (sc && sc.Config && sc.Config.saves) {
+        // This removes the function that triggers the prompt
+        sc.Save.onSave = null; 
+        
+        // Some games use a custom property, let's disable that too just in case
+        // sc.Config.saves.isTitle = false;
+    }
+
     // --- Styles ---
     const styleSheet = document.createElement("style");
     styleSheet.innerText = styles;
@@ -69,56 +79,95 @@ function initializeEditor(styles) {
 
     // --- Functionality ---
 
-    function createVariableInputRow(key, value, panel, objRef, propName) {
-        const row = document.createElement('div');
-        row.className = 'sc-variable-row';
-        const label = document.createElement('label');
-        label.className = 'sc-variable-label';
-        label.textContent = key;
-        label.title = key;
-        const input = document.createElement('input');
-        input.className = 'sc-variable-input';
-        input.value = Array.isArray(value) ? JSON.stringify(value) : value;
-        input.type = 'text';
-        input.addEventListener('change', (e) => {
-            const targetObject = objRef || getActiveState().variables;
-            const targetProp = propName || key;
-            const originalValue = targetObject[targetProp];
-            let newValue = e.target.value;
+    // --- Updated Functionality ---
 
+function createVariableInputRow(key, value, panel, objRef, propName) {
+    const row = document.createElement('div');
+    row.className = 'sc-variable-row';
+    
+    const label = document.createElement('label');
+    label.className = 'sc-variable-label';
+    label.textContent = key;
+    label.title = key;
+    row.appendChild(label);
+
+    const isObject = value !== null && typeof value === 'object';
+    
+    const input = document.createElement('input');
+    input.className = 'sc-variable-input';
+    // If it's an object/array, show it as a JSON string
+    input.value = isObject ? JSON.stringify(value) : value;
+    input.type = 'text';
+    
+    input.addEventListener('change', (e) => {
+        const targetObject = objRef || getActiveState().variables;
+        const targetProp = propName || key;
+        const originalValue = targetObject[targetProp];
+        let newValue = e.target.value;
+
+        try {
             if (typeof originalValue === 'number' && !isNaN(Number(newValue))) {
                 targetObject[targetProp] = Number(newValue);
             } else if (typeof originalValue === 'boolean') {
                 targetObject[targetProp] = (newValue.toLowerCase() === 'true');
-            } else if (Array.isArray(originalValue)) {
-                try {
-                    targetObject[targetProp] = JSON.parse(newValue);
-                } catch (err) { e.target.value = JSON.stringify(originalValue); }
+            } else if (typeof originalValue === 'object') {
+                // Handle Arrays and Objects via JSON parse
+                targetObject[targetProp] = JSON.parse(newValue);
             } else {
                 targetObject[targetProp] = newValue;
             }
-        });
-        row.appendChild(label);
-        row.appendChild(input);
-        panel.appendChild(row);
+        } catch (err) {
+            console.error("SC Editor: Invalid input format", err);
+            e.target.value = isObject ? JSON.stringify(originalValue) : originalValue;
+            e.target.style.borderColor = 'red';
+            setTimeout(() => e.target.style.borderColor = '', 1000);
+        }
+    });
+    row.appendChild(input);
+
+    // If it's an object, add a shortcut button to the Explorer tab
+    if (isObject) {
+        const jumpBtn = document.createElement('button');
+        jumpBtn.className = 'sc-explorer-button';
+        jumpBtn.textContent = '🔍';
+        jumpBtn.title = 'View in Explorer';
+        jumpBtn.style.marginLeft = '4px';
+        jumpBtn.onclick = () => {
+            // Set path: State -> variables -> [key]
+            // We find where State is located in SugarCube
+            const sc = getSugarCube();
+            const stateKey = sc.State ? 'State' : 'state';
+            explorerPath = [stateKey, 'variables', key];
+            
+            // Switch to Explorer Tab
+            const explorerTabBtn = document.querySelector('.sc-tab-button[data-tab="explorer"]');
+            if (explorerTabBtn) explorerTabBtn.click();
+        };
+        row.appendChild(jumpBtn);
     }
 
-    function populateVariablesPanel() {
-        variablesPanel.innerHTML = '';
-        const state = getActiveState();
-        if (!state) return;
-        const variables = state.variables;
-        const varNames = Object.keys(variables).sort();
-        if (varNames.length === 0) {
-            variablesPanel.textContent = "No variables found.";
-            return;
-        }
-        varNames.forEach(key => {
-            const currentValue = variables[key];
-            if (typeof currentValue === 'function' || (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue))) return;
-            createVariableInputRow(key, currentValue, variablesPanel);
-        });
+    panel.appendChild(row);
+}
+
+function populateVariablesPanel() {
+    variablesPanel.innerHTML = '';
+    const state = getActiveState();
+    if (!state) return;
+    const variables = state.variables;
+    const varNames = Object.keys(variables).sort();
+    
+    if (varNames.length === 0) {
+        variablesPanel.textContent = "No variables found.";
+        return;
     }
+
+    varNames.forEach(key => {
+        const currentValue = variables[key];
+        // We only skip functions now. Objects and Arrays are allowed.
+        if (typeof currentValue === 'function') return;
+        createVariableInputRow(key, currentValue, variablesPanel);
+    });
+}
 
     function populatePassagePanel() {
         const state = getActiveState();
@@ -214,7 +263,7 @@ function initializeEditor(styles) {
         if (keys.length === 0) propsContainer.textContent = 'Object is empty.';
 
         keys.forEach(key => {
-            const value = undefined;
+            let value = undefined;
             try {
                 value = currentObj[key];
             } catch (e) {
@@ -253,56 +302,96 @@ function initializeEditor(styles) {
         });
         explorerPanel.appendChild(propsContainer);
     }
+let currentScale = 1.0; // Global state for zoom
 
-    function populateUtilsPanel() {
-        utilsPanel.innerHTML = '';
-        const engine = getEngine();
-        if (!engine) return;
+function populateUtilsPanel() {
+    utilsPanel.innerHTML = '';
+    const engine = getEngine();
+    if (!engine) return;
 
-        const historyControls = document.createElement('div');
-        historyControls.className = 'sc-history-controls';
-        const backButton = document.createElement('button');
-        backButton.textContent = '← Back';
-        backButton.className = 'sc-history-button';
-        backButton.addEventListener('click', () => engine.backward());
-        const forwardButton = document.createElement('button');
-        forwardButton.textContent = 'Forward →';
-        forwardButton.className = 'sc-history-button';
-        forwardButton.addEventListener('click', () => engine.forward());
-        historyControls.appendChild(backButton);
-        historyControls.appendChild(forwardButton);
-        utilsPanel.appendChild(historyControls);
+    // --- History Controls ---
+    const historyControls = document.createElement('div');
+    historyControls.className = 'sc-history-controls';
+    const backButton = document.createElement('button');
+    backButton.textContent = '← Back';
+    backButton.className = 'sc-history-button';
+    backButton.addEventListener('click', () => engine.backward());
+    const forwardButton = document.createElement('button');
+    forwardButton.textContent = 'Forward →';
+    forwardButton.className = 'sc-history-button';
+    forwardButton.addEventListener('click', () => engine.forward());
+    historyControls.appendChild(backButton);
+    historyControls.appendChild(forwardButton);
+    utilsPanel.appendChild(historyControls);
 
-        const utilsContainer = document.createElement('div');
-        utilsContainer.className = 'sc-utils-container';
+    // --- Scale/Zoom Controls ---
+    const scaleLabel = document.createElement('div');
+    scaleLabel.style.margin = '10px 0 5px 0';
+    scaleLabel.style.fontSize = '12px';
+    scaleLabel.style.color = '#a0aec0';
+    scaleLabel.textContent = `Website Scale: ${Math.round(currentScale * 100)}%`;
 
-        const fullscreenButton = document.createElement('button');
-        fullscreenButton.className = 'sc-utils-button';
-        function updateFullscreenButtonState() {
-            fullscreenButton.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Enter Fullscreen';
-        }
-        fullscreenButton.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => console.error(`[SC Editor] Fullscreen Error: ${err.message}`));
-            } else if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
-        });
-        document.removeEventListener('fullscreenchange', updateFullscreenButtonState);
-        document.addEventListener('fullscreenchange', updateFullscreenButtonState);
-        updateFullscreenButtonState();
-        utilsContainer.appendChild(fullscreenButton);
+    const scaleContainer = document.createElement('div');
+    scaleContainer.className = 'sc-utils-row';
 
-        const linkButton = document.createElement('a');
-        linkButton.href = window.location.href;
-        linkButton.textContent = 'Open Game Frame in New Tab';
-        linkButton.target = '_blank';
-        linkButton.rel = 'noopener noreferrer';
-        linkButton.className = 'sc-utils-button';
-        utilsContainer.appendChild(linkButton);
-        utilsPanel.appendChild(utilsContainer);
+    const updateZoom = (newScale) => {
+        currentScale = Math.max(0.5, Math.min(2.0, newScale)); // Clamp between 50% and 200%
+        document.body.style.zoom = currentScale;
+        scaleLabel.textContent = `Website Scale: ${Math.round(currentScale * 100)}%`;
+    };
+
+    const zoomOut = document.createElement('button');
+    zoomOut.className = 'sc-history-button';
+    zoomOut.textContent = '−';
+    zoomOut.onclick = () => updateZoom(currentScale - 0.1);
+
+    const zoomReset = document.createElement('button');
+    zoomReset.className = 'sc-history-button';
+    zoomReset.textContent = 'Reset';
+    zoomReset.onclick = () => updateZoom(1.0);
+
+    const zoomIn = document.createElement('button');
+    zoomIn.className = 'sc-history-button';
+    zoomIn.textContent = '+';
+    zoomIn.onclick = () => updateZoom(currentScale + 0.1);
+
+    scaleContainer.appendChild(zoomOut);
+    scaleContainer.appendChild(zoomReset);
+    scaleContainer.appendChild(zoomIn);
+    
+    utilsPanel.appendChild(scaleLabel);
+    utilsPanel.appendChild(scaleContainer);
+
+    // --- General Utils ---
+    const utilsContainer = document.createElement('div');
+    utilsContainer.className = 'sc-utils-container';
+
+    const fullscreenButton = document.createElement('button');
+    fullscreenButton.className = 'sc-utils-button';
+    function updateFullscreenButtonState() {
+        fullscreenButton.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Enter Fullscreen';
     }
+    fullscreenButton.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => console.error(`[SC Editor] Fullscreen Error: ${err.message}`));
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    });
+    document.addEventListener('fullscreenchange', updateFullscreenButtonState);
+    updateFullscreenButtonState();
+    utilsContainer.appendChild(fullscreenButton);
 
+    const linkButton = document.createElement('a');
+    linkButton.href = window.location.href;
+    linkButton.textContent = 'Open Game Frame in New Tab';
+    linkButton.target = '_blank';
+    linkButton.rel = 'noopener noreferrer';
+    linkButton.className = 'sc-utils-button';
+    utilsContainer.appendChild(linkButton);
+    
+    utilsPanel.appendChild(utilsContainer);
+}
     function updateEditorContent() {
         populateVariablesPanel();
         populatePassagePanel();
