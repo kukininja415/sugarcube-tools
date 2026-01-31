@@ -139,6 +139,7 @@ function createVariableInputRow(key, value, panel, objRef, propName) {
             const stateKey = sc.State ? 'State' : 'state';
             explorerPath = [stateKey, 'variables', key];
             
+            populateExplorerPanel();
             // Switch to Explorer Tab
             const explorerTabBtn = document.querySelector('.sc-tab-button[data-tab="explorer"]');
             if (explorerTabBtn) explorerTabBtn.click();

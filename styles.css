@@ -121,7 +121,7 @@
 
 .sc-variable-input {
     flex-grow: 1;
-    min-width: 0;
+    min-width: 0 !important;
     padding: 5px 8px;
     background-color: #1a202c;
     border: 1px solid #4a5568;
@@ -182,7 +182,7 @@
 /* Utils Buttons */
 .sc-utils-button, .sc-history-button {
     display: block;
-    width: 100%;
+    width: -moz-available;
     padding: 10px;
     background-color: #4a5568;
     color: #e2e8f0;
@@ -262,4 +262,12 @@
 .sc-utils-row .sc-history-button {
     margin-bottom: 0; /* Override default margin */
     flex: 1;
+}
+
+#ui-dialog {
+    width: 66em;
+    max-width: 95%;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
 }
