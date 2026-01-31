@@ -15,9 +15,8 @@
     flex-direction: column;
     width: 380px;
     max-width: 95vw;
-    /* FIX: Ensure it never exceeds screen height */
     max-height: 85vh; 
-    overflow: hidden;
+    overflow: scroll;
 }
 
 /* Header / Drag Handle */
@@ -91,9 +90,6 @@
 /* Scrollable Body Content */
 #sc-editor-body {
     padding: 12px;
-    overflow-y: auto;
-    /* FIX: Manually calculate max height (85vh total - approx 80px for header/tabs) */
-    max-height: calc(85vh - 80px); 
     background-color: #2d3748;
 }
 

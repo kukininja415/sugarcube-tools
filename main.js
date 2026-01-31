@@ -154,7 +154,7 @@ function populateVariablesPanel() {
     const state = getActiveState();
     if (!state) return;
     const variables = state.variables;
-    const varNames = Object.keys(variables).sort();
+    const varNames = Object.getOwnPropertyNames(variables).sort();
     
     if (varNames.length === 0) {
         variablesPanel.textContent = "No variables found.";
@@ -259,7 +259,7 @@ function populateVariablesPanel() {
             return;
         }
 
-        const keys = Object.keys(currentObj).sort();
+        const keys = Object.getOwnPropertyNames(currentObj).sort();
         if (keys.length === 0) propsContainer.textContent = 'Object is empty.';
 
         keys.forEach(key => {
