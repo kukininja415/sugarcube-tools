@@ -297,7 +297,15 @@ function populateVariablesPanel() {
                 const preview = document.createElement('span');
                 preview.className = 'sc-explorer-value-preview sc-variable-input';
                 preview.textContent = 'Function';
+                const callBtn = document.createElement('button');
+                callBtn.className = 'sc-explorer-button';
+                callBtn.textContent = 'Call';
+                callBtn.title = 'Call';
+                callBtn.onclick = () => {
+                    SugarCube.UI.alert(value())
+                };
                 row.appendChild(preview);
+                row.appendChild(callBtn);
             }
             propsContainer.appendChild(row);
         });
